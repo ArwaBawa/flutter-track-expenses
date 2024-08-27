@@ -1,15 +1,28 @@
 import 'package:hive/hive.dart';
-
+import 'package:uuid/uuid.dart';
 part 'expense.g.dart';
 
-@HiveType(typeId: 1)
-class Expense extends HiveObject{
-  @HiveField(0)
-  String title;
-  @HiveField(1)
-   double amount;
-   @HiveField(2)
-   DateTime date;
+final Uuid uuid = Uuid();
 
-  Expense({ this.title='' ,  this.amount=0.0 ,DateTime? date,}): date = date ?? DateTime.now();
+@HiveType(typeId: 1)
+class Expense extends HiveObject {
+  @HiveField(0)
+  late final String id;
+
+  @HiveField(1)
+  String title;
+
+  @HiveField(2)
+  double amount;
+
+  @HiveField(3)
+  DateTime date;
+
+  // Constructor
+  Expense({
+    this.title = '', 
+    this.amount = 0.0, 
+    DateTime? date,
+  })  : date = date ?? DateTime.now(),
+      id = uuid.v4();
 }

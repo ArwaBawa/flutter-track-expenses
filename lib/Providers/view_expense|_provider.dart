@@ -13,7 +13,7 @@ class ViewExpense extends ChangeNotifier {
 
   ViewExpense(this._ref);
 
-   Expense expense = Expense();
+  Expense expense = Expense();
 
   bool _loading = false;
   bool get loading => _loading;
@@ -23,31 +23,43 @@ class ViewExpense extends ChangeNotifier {
   }
 
   void init(Expense expense) {
-    
-      this.expense = expense;
-    }
-  
+    this.expense = expense;
+  }
 
-  Future<void> write(String title,double amount, DateTime date) async {
+  Future<void> write(String title, double amount, DateTime date) async {
     loading = true;
     try {
       final box = await _ref.read(expenseBoxProvider.future);
-      Expense expense=Expense(title: title,amount: amount,date: date);
+      Expense expense = Expense(title: title, amount: amount, date: date);
       box.add(expense);
+      print(expense.id);
       _ref.refresh(expenseProvider);
       _ref.refresh(totalBalanceProvider);
     } catch (e) {
       loading = false;
       return Future.error(e);
     }
-    
+
     loading = false;
   }
 
-
-  Future<void> deleteItem(dynamic key) async {
+  Future<void> deleteExpense(String id) async {
     final box = await _ref.read(expenseBoxProvider.future);
-    await box.delete(key);
+
+    // Find the key for the expense with the given id
+    final expenseKey = box.keys.firstWhere((key) {
+      final expense = box.get(key) as Expense;
+      return expense.id == id;
+    }, orElse: () => null);
+
+    // If the expense with the given id is found, delete it
+    if (expenseKey != null) {
+      await box.delete(expenseKey);
+      print('Deleted expense with id: $id');
+    } else {
+      print('Expense with id: $id not found');
+    }
+    print(id);
     _ref.refresh(expenseProvider);
     _ref.refresh(totalBalanceProvider);
   }

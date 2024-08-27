@@ -1,31 +1,31 @@
-import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expense/Providers/themeProvider.dart';
 import 'package:flutter_expense/pages/HomePage.dart';
-import 'package:flutter_expense/theme/color.dart';
+import 'package:flutter_expense/theme/text_styles.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    // Get the current theme mode
-    final isDarkMode = AdaptiveTheme.of(context).mode.isDark;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode =
+        ref.watch(themeModeProvider); // Watch the theme mode provider
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    AppColors.darkBackground, 
-                    AppColors.darkAppBar, 
-                  ]
-                : [
-                    AppColors.lightBackground,
-                    AppColors.lightAppBar, 
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Switch mode", style: AppTextStyles.body),
+            Switch(
+                value: themeMode == ThemeMode.dark,
+                onChanged: (value) {
+                  ref.read(themeModeProvider.notifier).state =
+                      value ? ThemeMode.dark : ThemeMode.light;
+                }),
+          ],
         ),
+      ),
+      body: Container(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -33,54 +33,18 @@ class WelcomePage extends StatelessWidget {
               Image.asset('assets/welcome.png'),
               // Space
               SizedBox(height: 50.0),
-              
+
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => Homepage()),
+                    MaterialPageRoute(builder: (context) => const Homepage()),
                   );
                 },
                 child: Text(
                   "Get Started",
-                  style: TextStyle(
-                    color: isDarkMode
-                        ? AppColors.darkButtonIcon // Button text color for dark mode
-                        : AppColors.lightButtonIcon, // Button text color for light mode
-                  ),
+                  style: AppTextStyles.button,
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDarkMode
-                      ? AppColors.darkButton // Button background color for dark mode
-                      : AppColors.lightButton, // Button background color for light mode
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  textStyle: TextStyle(
-                    fontSize: 20,
-                    fontFamily: 'OpenSans',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              // Optional: Add a theme switcher
-              SizedBox(height: 20.0),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Light', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 10),
-                  Switch(
-                    value: isDarkMode,
-                    onChanged: (value) {
-                      if (value) {
-                        AdaptiveTheme.of(context).setDark();
-                      } else {
-                        AdaptiveTheme.of(context).setLight();
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Dark', style: TextStyle(fontSize: 16)),
-                ],
               ),
             ],
           ),

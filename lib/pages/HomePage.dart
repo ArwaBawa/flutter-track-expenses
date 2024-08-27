@@ -1,102 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expense/Providers/themeProvider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_expense/Providers/expense_provider.dart';
 import 'package:flutter_expense/Providers/totalBalanceProvider.dart';
-import 'package:flutter_expense/Providers/view_expense%7C_provider.dart';
-import 'package:flutter_expense/model/Add_expense.dart';
-import 'package:flutter_expense/theme/color.dart';
-import 'package:flutter_expense/widget/listTile.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_expense/controllers/expense_controller.dart';
+import 'package:flutter_expense/pages/Add_expense.dart';
+import 'package:flutter_expense/widget/ExpenseListTile.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
-import 'package:adaptive_theme/adaptive_theme.dart';
 
 class Homepage extends ConsumerWidget {
   const Homepage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final model = ref.watch(ViewExpenseProvide);
     final totalBalance = ref.watch(totalBalanceProvider);
-    final isDarkMode = AdaptiveTheme.of(context).mode.isDark;
-
-    void openDeleteBox(BuildContext context, int expenseKey, WidgetRef ref) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Delete Expense"),
-            content: Text("Are you sure you want to delete this expense?"),
-            actions: <Widget>[
-              TextButton(
-                child: Text("Cancel"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                child: Text("Delete"),
-                onPressed: () async {
-                  model.deleteItem(expenseKey);
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
+    final ExpenseController expenseController = ExpenseController();
+    final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkAppBar : AppColors.lightAppBar,
-
+      backgroundColor: Theme.of(context).colorScheme.background,
       floatingActionButton: FloatingActionButton(
-        backgroundColor: isDarkMode
-            ? AppColors.darkButton
-            : AppColors.lightButton,
+        backgroundColor:
+            Theme.of(context).floatingActionButtonTheme.backgroundColor,
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Add_expense()),
+            MaterialPageRoute(builder: (context) => const AddExpense()),
           ).whenComplete(() {
-            ref.refresh(expenseProvider); // Refresh data when returning
+            ref.refresh(expenseProvider);
           });
         },
         child: Icon(
           Icons.add,
-          color: isDarkMode ? AppColors.darkButtonIcon : AppColors.lightButtonIcon,
+          color: Theme.of(context).floatingActionButtonTheme.foregroundColor,
         ),
       ),
       appBar: AppBar(
-        backgroundColor: isDarkMode
-            ? AppColors.darkAppBar
-            : AppColors.lightAppBar,
-        title: Text(
-          'Total Expenses: ${totalBalance.value} SAR',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 20,
-            fontFamily: 'OpenSans',
-            fontWeight: FontWeight.bold,
-            color: isDarkMode ? AppColors.darkButtonIcon : AppColors.darkBackground,
-          ),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Total Expenses: ${totalBalance.value} SAR',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).appBarTheme.titleTextStyle,
+              ),
+            ),
+            Switch(
+              value: themeMode == ThemeMode.dark,
+              onChanged: (value) {
+                ref.read(themeModeProvider.notifier).state =
+                    value ? ThemeMode.dark : ThemeMode.light;
+              },
+            ),
+          ],
         ),
       ),
       body: ref.watch(expenseProvider).when(
-            data: (expenses) => ListView(
-              children: expenses
-                  .map((expense) => MyListTile(
-                        title: expense.title,
-                        trailing: '${expense.amount} SAR, ${DateFormat.yMMMd().format(expense.date)}',
-                        onDeletePress: (context) =>
-                            openDeleteBox(context, expense.key, ref),
-                      ))
-                  .toList(),
+            data: (expenses) => ListView.builder(
+              itemCount: expenses.length,
+              itemBuilder: (context, index) {
+                final expense = expenses[index];
+                return Slidable(
+                  key: ValueKey(expense.id),
+                  endActionPane: ActionPane(
+                    motion: const StretchMotion(),
+                    children: [
+                      SlidableAction(
+                        onPressed: (context) {
+                          expenseController.openDeleteBox(
+                              context, ref, expense.id);
+                        },
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor:
+                            Theme.of(context).textTheme.labelLarge?.color,
+                        icon: Icons.delete,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ],
+                  ),
+                  child: ExpenseListTile(
+                    title: expense.title,
+                    trailing:
+                        '${expense.amount} SAR, ${DateFormat.yMMMd().format(expense.date)}',
+                  ),
+                );
+              },
             ),
             error: (e, s) => Center(
               child: Text(
                 e.toString(),
-                style: TextStyle(
-                  color: isDarkMode ? AppColors.darkText : AppColors.lightText,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
             loading: () => const Center(

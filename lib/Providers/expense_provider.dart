@@ -6,3 +6,5 @@ final expenseProvider = FutureProvider<List<Expense>>((ref) async {
   final box = await ref.watch(expenseBoxProvider.future);
   return box.values.toList();
 });
+
+
